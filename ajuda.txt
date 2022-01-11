@@ -1,5 +1,0 @@
-
-telegram google drive - https://github.com/zume2020/Telegram-bot-Google-Drive
-
-rodar - pip3 install pyTelegramBotAPI
-
