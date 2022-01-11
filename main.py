@@ -1,25 +1,22 @@
 import telebot
 
 username = ''
+confirmEmail = False
 email = ''
 
-bot = telebot.TeleBot("2109357146:AAGRjkbIg0I5gy3kqNV_2G1AWW85xvyahjg", parse_mode=None) # You can set parse_mode by default. HTML or MARKDOWN
+# You can set parse_mode by default. HTML or MARKDOWN
+bot = telebot.TeleBot("2109357146:AAGRjkbIg0I5gy3kqNV_2G1AWW85xvyahjg", parse_mode=None) 
 
 @bot.message_handler(commands=['start', 'help'])
 def send_welcome(message):
-	bot.reply_to(message, "Ola este é o BOT. Informe seu email por favor?")
+  username = message.from_user.first_name  
+  bot.reply_to(message, f"Ola @{username} este é o ENTREVIBOT. Informe seu email por favor?")  
 
 @bot.message_handler(func=lambda message: True)
-def echo_all(message):
-	bot.reply_to(message, message.text)    
+def get_email(message):
+  email = message.text
+  bot.reply_to(message, f'Ótimo! Anotei seu email como {email}. Está correto? \n/sim\n/nao')
 
-@bot.message_handler(regexp="SOME_REGEXP")
-def handle_message(message):  
-		bot.reply_to(message, "regex?")  
-
-@bot.message_handler(commands=['hello'])
-def send_hello(message):
-	bot.reply_to(message, "Howdy, how are you doing?")    
 
 print('bot rodando')
 
