@@ -183,7 +183,7 @@ def create_folder_in_googledrive():
         # list files in the user folder 
         results = service.files().list(
             pageSize=10, fields="nextPageToken, files(id, name)").execute()
-        items = results.get('files', [])
+        items = results.get('filess', [])
         if not items:
             print('No files found.')
         else:            
