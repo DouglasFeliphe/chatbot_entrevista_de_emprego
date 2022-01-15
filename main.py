@@ -92,7 +92,7 @@ def process_get_files_step(message):
             bot.send_message(chat_id, 'Prazer em conheçe-lo ' + user.fullname + 
                             '\n Agora daremos andamento ao processo.')  
             
-            msg = bot.send_message(chat_id, 'Criaremos uma pasta no nosso drive com o seu nome e o seu email, para que você possamos gerenciar o processo.', reply_markup=markup)
+            msg = bot.send_message(chat_id, 'Criaremos uma pasta no nosso drive com o seu nome e o seu email, para que você possamos gerenciar o processo.')
             
             # TODO
             # confirm or cancel user folder creation
