@@ -1,17 +1,16 @@
 from __future__ import print_function
 
-import os.path
 import telebot
 from telebot import types
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 import time
 from googledrive_api_services import create_user_folder, upload_file_in_user_folder 
-from pathlib import Path
+from config import BOT_TOKEN
 # from markup import getMarkup
 
 # telegram bot
 # You can set parse_mode by default. HTML or MARKDOWN
-bot = telebot.TeleBot("2109357146:AAGRjkbIg0I5gy3kqNV_2G1AWW85xvyahjg") 
+bot = telebot.TeleBot(BOT_TOKEN) 
 
 # TODO:
 # persist user data (curriculum, audio, video, etc)
