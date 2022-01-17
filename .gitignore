@@ -1,10 +1,12 @@
 token.json
 credentials.json
 *.pdf
-.pdf
+*.txt
 *.ogg
 *.mkv
 *.mp4
+.pdf
 .ogg
 .mkv
 .mp4
+.txt

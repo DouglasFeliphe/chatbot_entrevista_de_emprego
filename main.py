@@ -1,17 +1,19 @@
 from __future__ import print_function
 from msilib.schema import MIME
 
+import os
 import telebot
 from telebot import types
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 import time
 from googledrive_api_services import create_user_folder, upload_file_in_user_folder, upload_video_in_user_folder 
-from config import BOT_TOKEN
+
 from text_services import save_question_in_file, save_answer_in_file
 # from markup import getMarkup
 
 # telegram bot
 # You can set parse_mode by default. HTML or MARKDOWN
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
 bot = telebot.TeleBot(BOT_TOKEN) 
 
 # TODO:

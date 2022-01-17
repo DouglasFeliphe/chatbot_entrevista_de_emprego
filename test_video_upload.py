@@ -2,7 +2,7 @@ import telebot
 import requests
 
 # telegram bot
-bot = telebot.TeleBot("2109357146:AAGRjkbIg0I5gy3kqNV_2G1AWW85xvyahjg") 
+bot = telebot.TeleBot("") 
 
 # Handles all sent documents and audio files
 @bot.message_handler(content_types=['video_note'])

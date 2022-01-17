@@ -1,7 +1,7 @@
 import telebot
 
 # telegram bot
-bot = telebot.TeleBot("2109357146:AAGRjkbIg0I5gy3kqNV_2G1AWW85xvyahjg") 
+bot = telebot.TeleBot("") 
 
 # Handle '/start' and '/help'
 @bot.message_handler(commands=['start'])
