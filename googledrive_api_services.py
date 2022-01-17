@@ -90,7 +90,7 @@ def create_user_folder(user_fullname):
         
   
         
-def upload_file_in_user_folder(filename, user_folder_name, user_folder_id, doc):
+def upload_file_in_user_folder(filename, user_folder_id, doc):
     print('uploading file in user folder...')
     
     try:
@@ -102,7 +102,7 @@ def upload_file_in_user_folder(filename, user_folder_name, user_folder_id, doc):
             'parents': [user_folder_id]
         }        
         
-        print('filename: ', f'{user_folder_name}/{filename}')
+        print('filename: ', f'{filename}')
         media = MediaFileUpload(filename, chunksize=1024 * 1024, mimetype=doc.mime_type,  resumable=True)
         request = googledrive_service.files().create(body=file_metadata,
                                 media_body=media)  
@@ -112,6 +112,45 @@ def upload_file_in_user_folder(filename, user_folder_name, user_folder_id, doc):
             status, response = request.next_chunk()
             if status:
                 print( "Uploaded %d%%." % int(status.progress() * 100))  
+                
+        
+        # list files in the user folder
+        # file = googledrive_service.files().create(
+        #         body=file_metadata,
+        #         media_body=media,
+        #         fields='id').execute()
+        # print ('File ID: %s' % file.get('id'))
+        
+        
+    except HttpError as error:
+        #TODO(developer) - Handle errors from drive API.
+        print(f'An error occurred: {error}')
+        
+        
+        
+def upload_voice_in_user_folder(filename, user_folder_id, voice):
+    print('uploading audio in user folder...')
+    
+    try:
+        
+        googledrive_service = build('drive', 'v3', credentials=creds)
+        
+        file_metadata = {
+            'name': filename,
+            'parents': [user_folder_id]
+        }        
+        
+        print('filename: ', f'/{filename}')
+        
+        media = MediaFileUpload(filename, chunksize=1024 * 1024, mimetype=voice.mime_type,  resumable=True)
+        request = googledrive_service.files().create(body=file_metadata,
+                                media_body=media)  
+        
+        response = None
+        while response is None:
+            status, response = request.next_chunk()
+            if status:
+                print( "Audio Uploaded %d%%." % int(status.progress() * 100))  
                 
         
         # list files in the user folder

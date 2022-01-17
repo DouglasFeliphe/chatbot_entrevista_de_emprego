@@ -1,0 +1,27 @@
+
+
+Ola, Eu sou o EntrevBot.
+Informe seu nome completo:
+None
+
+Informe seu email:
+
+Ola, Eu sou o EntrevBot.
+Informe seu nome completo:
+None
+
+Informe seu email:
+
+Ola, Eu sou o EntrevBot.
+Informe seu nome completo:
+DDd
+
+Informe seu email:
+teste
+
+Ola, Eu sou o EntrevBot.
+Informe seu nome completo:
+Teste
+
+Informe seu email:
+teste@teste

@@ -4,8 +4,9 @@ import telebot
 from telebot import types
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 import time
-from googledrive_api_services import create_user_folder, upload_file_in_user_folder 
+from googledrive_api_services import create_user_folder, upload_voice_in_user_folder, upload_file_in_user_folder 
 from config import BOT_TOKEN
+from text_services import create_questions_file ,save_question_in_file, save_answer_in_file
 # from markup import getMarkup
 
 # telegram bot
@@ -29,20 +30,21 @@ class User:
 user = User()
 
 # Handle '/start' and '/help'
-@bot.message_handler(commands=['help', 'start'])
+@bot.message_handler(commands=['iniciar'])
 def send_welcome(message):
-    msg = bot.reply_to(message, """\
-    Ola, Eu sou o EntrevBot.
-    Informe seu nome completo:
-    """)
+    question = 'Ola, Eu sou o EntrevBot.\nInforme seu nome completo:'    
+    
+    msg = bot.reply_to(message, question)    
+    save_question_in_file(question)
     bot.register_next_step_handler(msg, process_fullname_step)
 
 
-@bot.message_handler(commands=['cancel'])
-def send_welcome(message):
-    msg = bot.reply_to(message, """\
-    processo cancelado.
-    """)
+@bot.message_handler(commands=['cancelar'])
+def cancel(message):
+    print('cancelar')
+    bot.reply_to(message, 'O processo da entrevista foi cancelado.')
+    bot.stop_polling()
+    bot.stop_bot()
     bot.close()
 
 def process_fullname_step(message):
@@ -51,7 +53,9 @@ def process_fullname_step(message):
         fullname = message.text
         user.fullname = fullname
         user_dict[chat_id] = user
+        save_answer_in_file(fullname)
         msg = bot.reply_to(message, 'Informe seu email:')
+        save_question_in_file('Informe seu email:')
         bot.register_next_step_handler(msg, process_email_step)
     except Exception as e:
         bot.reply_to(message, "Erro ao processar seu nome")
@@ -88,6 +92,7 @@ def process_get_files_step(message):
         user = user_dict[chat_id]
         
         if(message.text == "Sim"):
+            save_answer_in_file(user.email)
             bot.send_message(chat_id, 'Prazer em conheçe-lo ' + user.fullname + 
                             '\n Agora daremos andamento ao processo.')  
             
@@ -126,6 +131,8 @@ def process_create_user_folder_step(message):
 @bot.message_handler(content_types=['document'])
 def process_upload_file_step(message): 
     
+    bot.send_message(message.chat.id, 'Fazendo upload do arquivo, aguarde...')
+    
     # get file data from message
     filename = message.document.file_name    
     file_info = bot.get_file(message.document.file_id)
@@ -134,16 +141,39 @@ def process_upload_file_step(message):
     with open(filename, 'wb') as new_file:
         new_file.write(downloaded_file)
 
-    bot.send_message(message.chat.id, 'Fazendo upload do arquivo, aguarde...')
     
     #upload file to google drive user folder   
     doc = message.document    
-    upload_file_in_user_folder(filename, user.fullname, user.folder_id, doc)
+    upload_file_in_user_folder(filename, user.folder_id, doc)
     bot.send_message(message.chat.id, 'Currículo recebido com sucesso!')
-    
+    time.sleep(2)
+    bot.send_message(message.chat.id, 'Agora vamos para o próximo passo, vamos lá?')
+    msg = bot.send_message(message.chat.id, 'para conhecer mais sobre o seu perfil gostaríamos que voce enviasse um audio curto sobre voce (max 60 segundos)')
+    bot.register_next_step_handler(msg, process_upload_voice_step)
 
 # Handle '/audio/video upload'
+@bot.message_handler(content_types=['voice'])
+def process_upload_voice_step(message):
+    bot.send_message(message.chat.id, 'Fazendo upload do audio, aguarde...')
+    
+    file_info = bot.get_file(message.voice.file_id)
+    
+    filename ='apresentacao.ogg'
+    
+    downloaded_file = bot.download_file(file_info.file_path)
+    with open(filename, 'wb') as new_file:
+        new_file.write(downloaded_file)
 
+    
+    #upload file to google drive user folder   
+    voice = message.voice    
+    upload_voice_in_user_folder(filename, user.folder_id, voice)
+    
+    bot.send_message(message.chat.id, 'Audio recebido com sucesso!')
+    # bot.send_message(message.chat.id, 'Agora vamos para o próximo passo, vamos lá?')
+    # msg = bot.send_message(message.chat.id, 'para conhecer mais sobre o seu perfil gostaríamos que voce enviasse um audio curto sobre voce (max 60 segundos)')
+    # bot.register_next_step_handler(msg, process_upload_audio_step)
+     
 
 
 

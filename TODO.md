@@ -14,7 +14,9 @@ como será o processo de envio do chatbot?
 
 - [x] criação da pasta do usuário
 
-- [] Fazer o upload do currículo para a pasta do usuário
+- [x] Fazer o upload do currículo para a pasta do usuário
+
+- [x] Fazer o upload do audio para a pasta do usuário
 
 - [] Fazer o upload do vídeo para a pasta do usuário
 
