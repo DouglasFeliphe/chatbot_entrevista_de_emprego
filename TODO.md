@@ -18,7 +18,7 @@ como será o processo de envio do chatbot?
 
 - [x] Fazer o upload do audio para a pasta do usuário
 
-- [] Fazer o upload do vídeo para a pasta do usuário
+- [x] Fazer o upload do vídeo para a pasta do usuário
 
 - [] Salvar as perguntas em um arquivo de texto na pasta do usuário
 

@@ -1,12 +1,13 @@
 from __future__ import print_function
+from msilib.schema import MIME
 
 import telebot
 from telebot import types
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 import time
-from googledrive_api_services import create_user_folder, upload_voice_in_user_folder, upload_file_in_user_folder 
+from googledrive_api_services import create_user_folder, upload_file_in_user_folder, upload_video_in_user_folder 
 from config import BOT_TOKEN
-from text_services import create_questions_file ,save_question_in_file, save_answer_in_file
+from text_services import save_question_in_file, save_answer_in_file
 # from markup import getMarkup
 
 # telegram bot
@@ -122,6 +123,7 @@ def process_create_user_folder_step(message):
     # create user folder in google drive
     user.folder_id = create_user_folder(user.fullname)
     bot.send_message(chat_id, 'Pasta criada com sucesso!') 
+    time.sleep(2)
         
     bot.send_message(chat_id, "A partir de agora vamos precisar que voce faça o upload de alguns arquivos começando pelo seu currículo, vamos lá?")
     msg = bot.send_message(chat_id, 'Vá até o ícone de anexo abaixo e escolha o arquivo do seu currículo para iniciar o upload')    
@@ -148,6 +150,7 @@ def process_upload_file_step(message):
     bot.send_message(message.chat.id, 'Currículo recebido com sucesso!')
     time.sleep(2)
     bot.send_message(message.chat.id, 'Agora vamos para o próximo passo, vamos lá?')
+    time.sleep(2)
     msg = bot.send_message(message.chat.id, 'para conhecer mais sobre o seu perfil gostaríamos que voce enviasse um audio curto sobre voce (max 60 segundos)')
     bot.register_next_step_handler(msg, process_upload_voice_step)
 
@@ -167,12 +170,39 @@ def process_upload_voice_step(message):
     
     #upload file to google drive user folder   
     voice = message.voice    
-    upload_voice_in_user_folder(filename, user.folder_id, voice)
+    upload_file_in_user_folder(filename, user.folder_id, voice)
     
     bot.send_message(message.chat.id, 'Audio recebido com sucesso!')
+    time.sleep(2)
+    bot.send_message(message.chat.id, 'Agora vamos para o próximo passo, vamos lá?')
+    msg = bot.send_message(message.chat.id, 'para conhecer mais sobre o seu perfil gostaríamos que voce enviasse um video curto sobre voce (max 60 segundos)')
+    bot.register_next_step_handler(msg, process_upload_video_step)
+    
+    
+
+
+@bot.message_handler(content_types=['video_note'])
+def process_upload_video_step(message):
+    bot.send_message(message.chat.id, 'Fazendo upload do vídeo, aguarde...')
+    
+    file_info = bot.get_file(message.video_note.file_id)
+    
+    filename ='apresentacao_video.mkv'
+    MIME_TYPE = 'video/x-matroska'
+    
+    downloaded_file = bot.download_file(file_info.file_path)
+    with open(filename, 'wb') as new_file:
+        new_file.write(downloaded_file)
+
+    
+    #upload file to google drive user folder  
+    upload_video_in_user_folder(filename, user.folder_id, MIME_TYPE)
+    
+    bot.send_message(message.chat.id, 'Vídeo recebido com sucesso!')
+    time.sleep(2)
     # bot.send_message(message.chat.id, 'Agora vamos para o próximo passo, vamos lá?')
-    # msg = bot.send_message(message.chat.id, 'para conhecer mais sobre o seu perfil gostaríamos que voce enviasse um audio curto sobre voce (max 60 segundos)')
-    # bot.register_next_step_handler(msg, process_upload_audio_step)
+    # msg = bot.send_message(message.chat.id, 'para conhecer mais sobre o seu perfil gostaríamos que voce enviasse um video curto sobre voce (max 60 segundos)')
+    # bot.register_next_step_handler(msg, process_upload_audio_step)    
      
 
 
