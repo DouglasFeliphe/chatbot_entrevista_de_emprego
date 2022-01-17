@@ -12,6 +12,8 @@ como será o processo de envio do chatbot?
 
 ### TODO
 
+#### prioridade alta
+
 - [x] criação da pasta do usuário
 
 - [x] Fazer o upload do currículo para a pasta do usuário
@@ -20,9 +22,13 @@ como será o processo de envio do chatbot?
 
 - [x] Fazer o upload do vídeo para a pasta do usuário
 
-- [] Salvar as perguntas em um arquivo de texto na pasta do usuário
+- [] implementar fluxo de cadastro de certificados
 
-- [] Testar comando /cancel
+- [+-] Salvar as perguntas em um arquivo de texto na pasta do usuário
+
+- [] Testar e implementar comando /cancel
+
+#### prioridade média
 
 - [] testar envio simultaneo de mensagens
 
