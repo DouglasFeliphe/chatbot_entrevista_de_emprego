@@ -7,24 +7,15 @@ from telebot import types
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 import time
 from googledrive_api_services import create_user_folder, upload_file_in_user_folder, upload_video_in_user_folder 
+
 from text_services import save_question_in_file, save_answer_in_file
-import requests
-from pyairtable import Table
-import six
 # from markup import getMarkup
 
 # telegram bot
 # You can set parse_mode by default. HTML or MARKDOWN
 # BOT_TOKEN = os.environ.get("BOT_TOKEN")
-BOT_TOKEN="2109357146:AAF3t9eP-sC1zIR4dTmDUmxHliC39YVzFvc"
+BOT_TOKEN="2109357146:AAGRjkbIg0I5gy3kqNV_2G1AWW85xvyahjg"
 bot = telebot.TeleBot(BOT_TOKEN) 
-
-# airtable API 
-AIRTABLE_API = 'keyYlXBzAYqHcwAy8'
-AIRTABLE_BASE_ID = 'appQij9zHD2NJ15HZ'
-TABLE_NAME = 'Participantes'
-table = Table(AIRTABLE_API, AIRTABLE_BASE_ID, TABLE_NAME)
-# airtable = Airtable('base_id', 'table_name')
 
 # TODO:
 # persist user data (curriculum, audio, video, etc)
@@ -37,174 +28,64 @@ class User:
     def __init__(self):
         self.fullname = None
         self.age = None
-        self.email = None
-        self.linkedin = None
-        self.cep = None
-        self.curriculum = None
-        self.video_presentation = None
-        self.certifications = None
-        self.linkedin = None
-        self.status_participation = None
+        self.sex = None
+        self.folder_id = None
 
 user = User()
-
-yes_no_markup = types.ReplyKeyboardMarkup(
-            one_time_keyboard=True, 
-            resize_keyboard=True
-            )       
-yes_no_markup.add("Sim","Não")
-
-confirm_cancel_markup = types.ReplyKeyboardMarkup(
-                one_time_keyboard=True, 
-                resize_keyboard=True
-            )       
-confirm_cancel_markup.add("Prosseguir","Cancelar")
-
-
 
 # Handle '/start' and '/help'
 @bot.message_handler(commands=['iniciar'])
 def send_welcome(message):
-    question = 'Ola, Eu sou o EntrevBot.\nInforme seu nome completo:'   
-    msg = bot.reply_to(message, question)  
-     
-    # save_question_in_file(question)
+    question = 'Ola, Eu sou o EntrevBot.\nInforme seu nome completo:'    
+    
+    msg = bot.reply_to(message, question)    
+    save_question_in_file(question)
     bot.register_next_step_handler(msg, process_fullname_step)
 
 
-
-
 @bot.message_handler(commands=['cancelar'])
-def cancel_process(message):
+def cancel(message):
     print('cancelar')
-    bot.clear_step_handler_by_chat_id(message.chat.id)
     bot.reply_to(message, 'O processo da entrevista foi cancelado.')
-    bot.stop_polling()    
+    bot.stop_polling()
     bot.stop_bot()
     bot.close()
 
-
-
 def process_fullname_step(message):
     try:
-        
         chat_id = message.chat.id
-        user.fullname = message.text
-        print('message.text', message.text)
+        fullname = message.text
+        user.fullname = fullname
         user_dict[chat_id] = user
-        msg = bot.reply_to(message, 'Informe sua idade:')
-        bot.register_next_step_handler(msg, process_age_step)
-        
+        save_answer_in_file(fullname)
+        msg = bot.reply_to(message, 'Informe seu email:')
+        save_question_in_file('Informe seu email:')
+        bot.register_next_step_handler(msg, process_email_step)
     except Exception as e:
         bot.reply_to(message, "Erro ao processar seu nome")
 
 
-
-def process_age_step(message):
-    try:
-        chat_id = message.chat.id
-        age = message.text
-        print('message.text', message.text)
-        
-        if not age.isdigit() and not int(age) > 0:
-            msg = bot.reply_to(message, 'Idade inválida. Informe novamente:')
-            bot.register_next_step_handler(msg, process_age_step)
-            return 
-        
-        user.age = int(age)
-        user_dict[chat_id] = user
-        msg = bot.reply_to(message, 'Informe seu CEP:')
-        bot.register_next_step_handler(msg, process_cep_step)
-        
-    except Exception as e:
-        bot.reply_to(message, "Erro ao processar sua idade")
-
-
-def process_cep_step(message):
-    try:
-        chat_id = message.chat.id
-        CEP = message.text
-        print('message.text', message.text)
-        
-        if not CEP.isdigit() and not len(CEP) == 8:
-            msg = bot.reply_to(message, 'CEP inválido. Informe novamente:')
-            bot.register_next_step_handler(msg, process_cep_step)
-            return 
-        
-        user.cep = int(CEP)
-        msg = bot.reply_to(message, f'Seu CEP é {CEP}?', reply_markup=yes_no_markup)         
-        bot.register_next_step_handler(msg, process_cep_confirm_step)
-        
-    except Exception as e:
-        bot.reply_to(message, "Erro ao processar seu CEP")
- 
-        
-def process_cep_confirm_step(message):
-    try:
-        if(message.text == 'Sim'):
-            msg = bot.reply_to(message, 'Informe seu email:')
-            bot.register_next_step_handler(msg, process_email_step)
-        elif(message.text == "Não"):
-            msg = bot.reply_to(message, 'Ok')
-            time.sleep(2)
-            bot.register_next_step_handler(msg, process_fullname_step) 
-            return  
-        
-    except Exception as e:
-        bot.reply_to(message, "Erro ao processar seu CEP")
-    
-
-
 def process_email_step(message):
     try:
+        chat_id = message.chat.id
         email = message.text
-        
-        if email.isdigit() or '@' not in email:
+        if email.isdigit():
             msg = bot.reply_to(message, 'O email que voce digitou é inválido. Informe um email válido:')
             bot.register_next_step_handler(msg, process_email_step)
             return
-        
+        user = user_dict[chat_id]
         user.email = email
-        msg = bot.reply_to(message, f'Seu email é {user.email}?', reply_markup=yes_no_markup)       
-        bot.register_next_step_handler(msg, process_linkedin_step)
-            
-    except Exception as e:
-        bot.reply_to(message, "Erro ao processar seu email")
-        
-     
-     
-def process_linkedin_step(message):
-    try:
-        if(message.text == 'Sim'):
-            msg = bot.reply_to(message, 'Informe seu linkedin:')
-            user.linkedin = message.text            
-            bot.register_next_step_handler(msg, process_linked_confirm_step)
-        elif(message.text == "Não"):
-            msg = bot.reply_to(message, 'Ok')
-            time.sleep(2)
-            bot.register_next_step_handler(msg, process_email_step) 
-            return 
-        
-    except Exception as e:
-        bot.reply_to(message, "Erro ao processar seu email")   
-   
-   
-def process_linked_confirm_step(message):
-    try:
-        linkedin = message.text
-        
-        if linkedin.isdigit() or '@' not in linkedin:
-            msg = bot.reply_to(message, 'O email que voce digitou é inválido. Informe um email válido:')
-            bot.register_next_step_handler(msg, process_email_step)
-            return
-        
-        user.linkedin = linkedin        
-        msg = bot.reply_to(message, f'Seu linkedin é {user.email}?', reply_markup=yes_no_markup)       
+        markup = types.ReplyKeyboardMarkup(
+            one_time_keyboard=True, 
+            resize_keyboard=True
+            )       
+        markup.add("Sim","Não")
+        msg = bot.reply_to(message, f'Seu email é {user.email}?', reply_markup=markup)       
         bot.register_next_step_handler(msg, process_get_files_step)
             
     except Exception as e:
-        bot.reply_to(message, "Erro ao processar seu email")                
-        
+        bot.reply_to(message, "Erro ao processar seu email")
+
 
 def process_get_files_step(message):
     
@@ -215,22 +96,14 @@ def process_get_files_step(message):
         user = user_dict[chat_id]
         
         if(message.text == "Sim"):
-            # make a post request to airtable to save the user data
-            table.create({
-                "nome_completo": user.fullname, 
-                "idade": user.age,
-                'CEP': user.cep,
-                "email": user.email, 
-                "linkedin": user.linkedin, 
-                })  
-                   
-            # save_answer_in_file(user.email)
+            save_answer_in_file(user.email)
             bot.send_message(chat_id, 'Prazer em conheçe-lo ' + user.fullname + 
                             '\n Agora daremos andamento ao processo.')  
             
+            msg = bot.send_message(chat_id, 'Criaremos uma pasta no nosso drive com o seu nome e o seu email, para que você possamos gerenciar o processo.')
             
+            # TODO
             # confirm or cancel user folder creation
-            msg = bot.send_message(chat_id, 'Salvaremos as suas informações para que possamos gerenciar o processo.', reply_markup=confirm_cancel_markup)
             
             bot.register_next_step_handler(msg, process_create_user_folder_step)
             return
@@ -243,17 +116,17 @@ def process_get_files_step(message):
         
     except Exception as e:
         bot.reply_to(message, 'Erro ao processar o seu currículo: ' + str(e))
-        
+
 
 # Handle create user folder
 def process_create_user_folder_step(message):
     chat_id = message.chat.id
-    # bot.send_message(chat_id, 'Criando pasta no nosso drive...')
+    bot.send_message(chat_id, 'Criando pasta no nosso drive...')
         
     # create user folder in google drive
-    # user.folder_id = create_user_folder(user.fullname)
-    # bot.send_message(chat_id, 'Pasta criada com sucesso!') 
-    # time.sleep(2)
+    user.folder_id = create_user_folder(user.fullname)
+    bot.send_message(chat_id, 'Pasta criada com sucesso!') 
+    time.sleep(2)
         
     bot.send_message(chat_id, "A partir de agora vamos precisar que voce faça o upload de alguns arquivos começando pelo seu currículo, vamos lá?")
     msg = bot.send_message(chat_id, 'Vá até o ícone de anexo abaixo e escolha o arquivo do seu currículo para iniciar o upload')    
@@ -273,19 +146,14 @@ def process_upload_file_step(message):
     with open(filename, 'wb') as new_file:
         new_file.write(downloaded_file)
 
-    # table.create({"nome_completo": user.fullname, "idade": user.age ,"email": user.email, "curriculum": [{ "filename": 'curriculum.pdf',"url": file_info.file_path }]})
     
     #upload file to google drive user folder   
-    # doc = message.document    
-    # upload_file_in_user_folder(filename, user.folder_id, doc)
-    
+    doc = message.document    
+    upload_file_in_user_folder(filename, user.folder_id, doc)
     bot.send_message(message.chat.id, 'Currículo recebido com sucesso!')
     time.sleep(2)
     bot.send_message(message.chat.id, 'Agora vamos para o próximo passo, vamos lá?')
     time.sleep(2)
-    
-    print('table', table.all(sort=["curriculum"]))
-    
     msg = bot.send_message(message.chat.id, 'para conhecer mais sobre o seu perfil gostaríamos que voce enviasse um audio curto sobre voce (max 60 segundos)')
     bot.register_next_step_handler(msg, process_upload_voice_step)
 
@@ -304,8 +172,8 @@ def process_upload_voice_step(message):
 
     
     #upload file to google drive user folder   
-    # voice = message.voice    
-    # upload_file_in_user_folder(filename, user.folder_id, voice)
+    voice = message.voice    
+    upload_file_in_user_folder(filename, user.folder_id, voice)
     
     bot.send_message(message.chat.id, 'Audio recebido com sucesso!')
     time.sleep(2)
@@ -335,15 +203,12 @@ def process_upload_video_step(message):
     
     bot.send_message(message.chat.id, 'Vídeo recebido com sucesso!')
     time.sleep(2)
-    bot.send_message(message.chat.id, 'Agora vamos para o próximo passo, vamos lá?')
-    bot.send_message(message.chat.id, 'quais são as tr'
-                     # bot.send_message(message.chat.id, 'Agora vamos para o próximo passo, vamos lá?')
+    # bot.send_message(message.chat.id, 'Agora vamos para o próximo passo, vamos lá?')
     # msg = bot.send_message(message.chat.id, 'para conhecer mais sobre o seu perfil gostaríamos que voce enviasse um video curto sobre voce (max 60 segundos)')
     # bot.register_next_step_handler(msg, process_upload_audio_step)    
      
 
 
-def process_
 
 
 
