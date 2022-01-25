@@ -4,13 +4,11 @@ from msilib.schema import MIME
 import os
 import telebot
 from telebot import types
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 import time
-from googledrive_api_services import create_user_folder, upload_file_in_user_folder, upload_video_in_user_folder 
-from text_services import save_question_in_file, save_answer_in_file
-import requests
+# from googledrive_api_services import create_user_folder, upload_file_in_user_folder, upload_video_in_user_folder 
+# from text_services import save_question_in_file, save_answer_in_file
 from pyairtable import Table
-import six
+# import six
 # from markup import getMarkup
 
 # telegram bot
@@ -331,19 +329,99 @@ def process_upload_video_step(message):
 
     
     #upload file to google drive user folder  
-    upload_video_in_user_folder(filename, user.folder_id, MIME_TYPE)
+    # upload_video_in_user_folder(filename, user.folder_id, MIME_TYPE)
     
     bot.send_message(message.chat.id, 'Vídeo recebido com sucesso!')
     time.sleep(2)
     bot.send_message(message.chat.id, 'Agora vamos para o próximo passo, vamos lá?')
-    bot.send_message(message.chat.id, 'quais são as tr'
-                     # bot.send_message(message.chat.id, 'Agora vamos para o próximo passo, vamos lá?')
-    # msg = bot.send_message(message.chat.id, 'para conhecer mais sobre o seu perfil gostaríamos que voce enviasse um video curto sobre voce (max 60 segundos)')
-    # bot.register_next_step_handler(msg, process_upload_audio_step)    
+    msg = bot.send_message(message.chat.id, 'quais são as três coisas mais importantes para voce no seu trabalho?')
+    bot.register_next_step_handler(msg, process_comportamental_step)    
      
 
 
-def process_
+def process_comportamental_test_step(message):
+    try:
+        chat_id = message.chat.id
+        user.comportamental_test = message.text
+        bot.send_message(chat_id, 'Ok!')
+        time.sleep(2)
+        msg = bot.send_message(chat_id, 'Conte-nos qual foi a decisão mais difícil que você teve que tomar nos últimos seis meses?')
+        bot.register_next_step_handler(msg, process_hard_decision_step)
+
+    except Exception as e:
+        bot.send_message(message.chat.id, 'Desculpe, não entendi o que você quis dizer. Por favor, tente novamente.')
+        bot.register_next_step_handler(message, process_comportamental_test_step)
+
+
+def process_hard_decision_step(message):
+    try:
+        chat_id = message.chat.id
+        user.hard_decision = message.text
+        time.sleep(2)
+        msg = bot.send_message(chat_id, 'Descreva o melhor parceiro ou supervisor com quem você já trabalhou e o que considera que era tão interessante no estilo de gestão dessa pessoa?')
+        bot.register_next_step_handler(msg, process_best_partner_step)
+
+    except Exception as e:
+        bot.send_message(message.chat.id, 'Desculpe, não entendi o que você quis dizer. Por favor, tente novamente.')
+        bot.register_next_step_handler(message, process_hard_decision_step)
+
+
+def process_best_partner_step(message):
+    try:
+        chat_id = message.chat.id
+        user.best_partner = message.text
+        time.sleep(2)
+        msg = bot.send_message(chat_id, 'O que acha que vai estar fazendo a esta hora neste mesmo dia, no próximo ano?')
+        bot.register_next_step_handler(msg, process_future_step)
+
+    except Exception as e:
+        bot.send_message(message.chat.id, 'Desculpe, não entendi o que você quis dizer. Por favor, tente novamente.')
+        bot.register_next_step_handler(message, process_best_partner_step)
+
+
+def process_future_step(message):
+    try:
+        chat_id = message.chat.id
+        user.future = message.text
+        time.sleep(2)
+        msg = bot.send_message(chat_id, 'Finalmente, porque você acha que devemos contratá-lo(a)?')
+        bot.register_next_step_handler(msg, process_reason_step)
+
+    except Exception as e:
+        bot.send_message(message.chat.id, 'Desculpe, não entendi o que você quis dizer. Por favor, tente novamente.')
+        bot.register_next_step_handler(message, process_future_step)
+
+
+def process_reason_step(message):
+    try:
+        chat_id = message.chat.id
+        user.reason = message.text
+        time.sleep(2)
+        msg = bot.send_message(chat_id, 'Obrigado!')
+        bot.register_next_step_handler(msg, process_end_step)
+
+    except Exception as e:
+        bot.send_message(message.chat.id, 'Desculpe, não entendi o que você quis dizer. Por favor, tente novamente.')
+        bot.register_next_step_handler(message, process_reason_step)
+
+
+def process_end_step(message):
+    try:
+        chat_id = message.chat.id
+        user.save()
+        bot.send_message(chat_id, 'Obrigado por participar!')
+        bot.send_message(chat_id, 'Obrigado pela sua pergunta. O resultado da sua entrevista sairá muito em breve. Voce receberá um email de notificação, fique atento na sua caixa de spam.')
+        bot.send_message(chat_id, 'Boa sorte!')
+        bot.send_dice(chat_id, emoji='HAPPY_EMOJI')
+        # bot.send_animation(chat_id, open('animation.gif', 'rb'))
+        time.sleep(2)
+        bot.send_message(chat_id, 'Você pode acessar seu perfil no menu acima.')
+        time.sleep(2)
+
+    except Exception as e:
+        bot.send_message(message.chat.id, 'Desculpe, não entendi o que você quis dizer. Por favor, tente novamente.')
+        bot.register_next_step_handler(message, process_end_step)
+
 
 
 
