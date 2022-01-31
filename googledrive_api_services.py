@@ -47,8 +47,6 @@ def create_user_folder(user_fullname):
     user_folder_id = None
     
     try:
-                                    
-         
         FILE_METADATA = {
             'name': user_fullname,
             'mimeType': 'application/vnd.google-apps.folder',
@@ -89,7 +87,7 @@ def create_user_folder(user_fullname):
     except HttpError as error:
         # TODO(developer) - Handle errors from drive API.
         print(f'An error occurred: {error}')
-        
+                
   
         
 def upload_file_in_user_folder(filename, user_folder_id, file):
@@ -104,29 +102,27 @@ def upload_file_in_user_folder(filename, user_folder_id, file):
         
         MIME_TYPE = file.mime_type        
         
-        print('filename: ', f'{filename}')
+        # print('filename: ', f'{filename}')
         media = MediaFileUpload(filename, chunksize=1024 * 1024, mimetype=MIME_TYPE,  resumable=True)
         request = googledrive_service.files().create(body=FILE_METADATA,
                                 media_body=media)  
         
             #'VideoNote' object has no attribute 'mime_type'
-
             
         response = None
         while response is None:
             status, response = request.next_chunk()
             if status:
                 print( "Uploaded %d%%." % int(status.progress() * 100))  
-                
-        
         
         
         # list files in the user folder
-        # file = googledrive_service.files().create(
-        #         body=FILE_METADATA,
-        #         media_body=media,
-        #         fields='id').execute()
-        # print ('File ID: %s' % file.get('id'))
+        file = googledrive_service.files().create(
+                body=FILE_METADATA,
+                media_body=media,
+                fields='id').execute()
+        print ('File ID: %s' % file.get('id'))
+        return file.get('id')
         
         
     except HttpError as error:
@@ -146,7 +142,7 @@ def upload_video_in_user_folder(filename, user_folder_id, MIME_TYPE):
             'parents': [user_folder_id]
         }             
         
-        print('filename: ', f'{filename}')
+        # print('filename: ', f'{filename}')
         media = MediaFileUpload(filename, chunksize=1024 * 1024, mimetype=MIME_TYPE,  resumable=True)
         request = googledrive_service.files().create(body=FILE_METADATA,
                                 media_body=media)  
@@ -160,12 +156,12 @@ def upload_video_in_user_folder(filename, user_folder_id, MIME_TYPE):
                 
         
         # list files in the user folder
-        # file = googledrive_service.files().create(
-        #         body=FILE_METADATA,
-        #         media_body=media,
-        #         fields='id').execute()
-        # print ('File ID: %s' % file.get('id'))
-        
+        file = googledrive_service.files().create(
+                body=FILE_METADATA,
+                media_body=media,
+                fields='id').execute()
+        print ('File ID: %s' % file.get('id'))
+        return file.get('id')
         
     except HttpError as error:
         #TODO(developer) - Handle errors from drive API.

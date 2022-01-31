@@ -5,11 +5,8 @@ import os
 import telebot
 from telebot import types
 import time
-# from googledrive_api_services import create_user_folder, upload_file_in_user_folder, upload_video_in_user_folder 
-# from text_services import save_question_in_file, save_answer_in_file
+from googledrive_api_services import create_user_folder, upload_file_in_user_folder, upload_video_in_user_folder 
 from pyairtable import Table
-# import six
-# from markup import getMarkup
 
 # telegram bot
 # You can set parse_mode by default. HTML or MARKDOWN
@@ -20,9 +17,8 @@ bot = telebot.TeleBot(BOT_TOKEN)
 # airtable API 
 AIRTABLE_API = 'keyYlXBzAYqHcwAy8'
 AIRTABLE_BASE_ID = 'appQij9zHD2NJ15HZ'
-TABLE_NAME = 'Participantes'
-table = Table(AIRTABLE_API, AIRTABLE_BASE_ID, TABLE_NAME)
-# airtable = Airtable('base_id', 'table_name')
+table_participantes = Table(AIRTABLE_API, AIRTABLE_BASE_ID, 'Participantes')
+table_vagas = Table(AIRTABLE_API, AIRTABLE_BASE_ID, 'Vagas')
 
 # TODO:
 # persist user data (curriculum, audio, video, etc)
@@ -34,15 +30,26 @@ user_dict = {}
 class User:
     def __init__(self):
         self.fullname = None
+        self.desired_job = None
         self.age = None
         self.email = None
-        self.linkedin = None
         self.cep = None
-        self.curriculum = None
-        self.video_presentation = None
-        self.certifications = None
         self.linkedin = None
-        self.status_participation = None
+        self.curriculum_file_id = None
+        self.video_presentation_file_id = None
+        self.certifications_file_id = None
+        self.three_things = None
+        self.hard_decision = None
+        self.best_partner = None
+        self.future = None
+        self.reason = None
+        
+        
+        
+        
+        self.status = "Em andamento"
+        
+        
 
 user = User()
 
@@ -51,6 +58,11 @@ yes_no_markup = types.ReplyKeyboardMarkup(
             resize_keyboard=True
             )       
 yes_no_markup.add("Sim","Não")
+
+jobs_markup = types.ReplyKeyboardMarkup(
+     one_time_keyboard=True, 
+            resize_keyboard=True
+        ) 
 
 confirm_cancel_markup = types.ReplyKeyboardMarkup(
                 one_time_keyboard=True, 
@@ -70,8 +82,6 @@ def send_welcome(message):
     bot.register_next_step_handler(msg, process_fullname_step)
 
 
-
-
 @bot.message_handler(commands=['cancelar'])
 def cancel_process(message):
     print('cancelar')
@@ -84,10 +94,33 @@ def cancel_process(message):
 
 
 def process_fullname_step(message):
+    
+    # list all jobs and print in keyboard
+    for vaga in table_vagas.all(sort=['id']):
+        jobs_markup.add(vaga["fields"]["nome"])
+         
     try:
-        
         chat_id = message.chat.id
         user.fullname = message.text
+        print('message.text', message.text)
+        user_dict[chat_id] = user
+        msg = bot.reply_to(message, 'Informe a vaga desejada:', reply_markup=jobs_markup)
+        bot.register_next_step_handler(msg, process_desired_job_step)
+        
+    except Exception as e:
+        bot.reply_to(message, "Erro ao processar seu nome")
+        
+        
+         
+def process_desired_job_step(message):
+    try:        
+        chat_id = message.chat.id
+        
+        # get the job name by id
+        
+        
+        
+        user.desired_job = message.text
         print('message.text', message.text)
         user_dict[chat_id] = user
         msg = bot.reply_to(message, 'Informe sua idade:')
@@ -120,7 +153,6 @@ def process_age_step(message):
 
 def process_cep_step(message):
     try:
-        chat_id = message.chat.id
         CEP = message.text
         print('message.text', message.text)
         
@@ -213,16 +245,7 @@ def process_get_files_step(message):
         user = user_dict[chat_id]
         
         if(message.text == "Sim"):
-            # make a post request to airtable to save the user data
-            table.create({
-                "nome_completo": user.fullname, 
-                "idade": user.age,
-                'CEP': user.cep,
-                "email": user.email, 
-                "linkedin": user.linkedin, 
-                })  
-                   
-            # save_answer_in_file(user.email)
+           
             bot.send_message(chat_id, 'Prazer em conheçe-lo ' + user.fullname + 
                             '\n Agora daremos andamento ao processo.')  
             
@@ -246,26 +269,29 @@ def process_get_files_step(message):
 # Handle create user folder
 def process_create_user_folder_step(message):
     chat_id = message.chat.id
+    print('Criando pasta no nosso drive...')
     # bot.send_message(chat_id, 'Criando pasta no nosso drive...')
         
     # create user folder in google drive
-    # user.folder_id = create_user_folder(user.fullname)
+    user.folder_id = create_user_folder(user.fullname)
+    print('Pasta criada com sucesso!')
     # bot.send_message(chat_id, 'Pasta criada com sucesso!') 
     # time.sleep(2)
         
     bot.send_message(chat_id, "A partir de agora vamos precisar que voce faça o upload de alguns arquivos começando pelo seu currículo, vamos lá?")
+    time.sleep(2)
     msg = bot.send_message(chat_id, 'Vá até o ícone de anexo abaixo e escolha o arquivo do seu currículo para iniciar o upload')    
-    bot.register_next_step_handler(msg, process_upload_file_step)
+    bot.register_next_step_handler(msg, process_upload_curriculum_step)
 
 # Handle '/document upload'
 @bot.message_handler(content_types=['document'])
-def process_upload_file_step(message): 
+def process_upload_curriculum_step(message): 
     
     bot.send_message(message.chat.id, 'Fazendo upload do arquivo, aguarde...')
     
     # get file data from message
     filename = message.document.file_name    
-    file_info = bot.get_file(message.document.file_id)
+    file_info = bot.get_file(message.document.file_id)    
     downloaded_file = bot.download_file(file_info.file_path)
     
     with open(filename, 'wb') as new_file:
@@ -274,44 +300,108 @@ def process_upload_file_step(message):
     # table.create({"nome_completo": user.fullname, "idade": user.age ,"email": user.email, "curriculum": [{ "filename": 'curriculum.pdf',"url": file_info.file_path }]})
     
     #upload file to google drive user folder   
-    # doc = message.document    
-    # upload_file_in_user_folder(filename, user.folder_id, doc)
+    doc = message.document    
+    user.curriculum_file_id = upload_file_in_user_folder(filename, user.folder_id, doc)
+    # user.curriculum_file_id = 
+    print(f"curriculum_file_id: {user.curriculum_file_id}",)
+    
+    # make a post request to airtable to save the user data
+    table_participantes.create({
+        "nome_completo": user.fullname, 
+        "vaga": user.desired_job,
+        "idade": user.age,
+        'CEP': user.cep,
+        "email": user.email, 
+        "linkedin": user.linkedin, 
+        "curriculum": [
+            {                        
+                "url":f'https://drive.google.com/u/1/uc?id={user.curriculum_file_id}&export=download',
+            }                    
+        ],            
+        "status_participacao": user.status, 
+        })                     
+    
     
     bot.send_message(message.chat.id, 'Currículo recebido com sucesso!')
     time.sleep(2)
     bot.send_message(message.chat.id, 'Agora vamos para o próximo passo, vamos lá?')
-    time.sleep(2)
+    time.sleep(2) 
     
-    print('table', table.all(sort=["curriculum"]))
-    
-    msg = bot.send_message(message.chat.id, 'para conhecer mais sobre o seu perfil gostaríamos que voce enviasse um audio curto sobre voce (max 60 segundos)')
-    bot.register_next_step_handler(msg, process_upload_voice_step)
+    msg = bot.send_message(message.chat.id, 'para conhecer mais sobre o seu perfil gostaríamos que voce enviasse um vídeo curto sobre voce (max 60 segundos)')
+    bot.register_next_step_handler(msg, process_upload_video_step)
 
 # Handle '/audio/video upload'
-@bot.message_handler(content_types=['voice'])
-def process_upload_voice_step(message):
-    bot.send_message(message.chat.id, 'Fazendo upload do audio, aguarde...')
+# @bot.message_handler(content_types=['voice'])
+# def process_upload_voice_step(message):
+#     bot.send_message(message.chat.id, 'Fazendo upload do audio, aguarde...')
     
-    file_info = bot.get_file(message.voice.file_id)
+#     file_info = bot.get_file(message.voice.file_id)
     
-    filename ='apresentacao.ogg'
+#     filename ='apresentacao.ogg'
     
+#     downloaded_file = bot.download_file(file_info.file_path)
+#     with open(filename, 'wb') as new_file:
+#         new_file.write(downloaded_file)
+
+    
+#     #upload file to google drive user folder   
+#     # voice = message.voice    
+#     # upload_file_in_user_folder(filename, user.folder_id, voice)
+    
+#     bot.send_message(message.chat.id, 'Audio recebido com sucesso!')
+#     time.sleep(2)
+#     bot.send_message(message.chat.id, 'Agora vamos para o próximo passo, vamos lá?')
+#     msg = bot.send_message(message.chat.id, 'para conhecer mais sobre o seu perfil gostaríamos que voce enviasse um video curto sobre voce (max 60 segundos)')
+#     bot.register_next_step_handler(msg, process_upload_video_step)
+    
+
+
+# Handle '/document upload'
+@bot.message_handler(content_types=['document'])
+def process_upload_curriculum_step(message): 
+    
+    bot.send_message(message.chat.id, 'Fazendo upload do arquivo, aguarde...')
+    
+    # get file data from message
+    filename = message.document.file_name    
+    file_info = bot.get_file(message.document.file_id)    
     downloaded_file = bot.download_file(file_info.file_path)
+    
     with open(filename, 'wb') as new_file:
         new_file.write(downloaded_file)
 
+    # table.create({"nome_completo": user.fullname, "idade": user.age ,"email": user.email, "curriculum": [{ "filename": 'curriculum.pdf',"url": file_info.file_path }]})
     
     #upload file to google drive user folder   
-    # voice = message.voice    
-    # upload_file_in_user_folder(filename, user.folder_id, voice)
+    doc = message.document    
+    user.curriculum_file_id = upload_file_in_user_folder(filename, user.folder_id, doc)
+    # user.curriculum_file_id = 
+    print(f"curriculum_file_id: {user.curriculum_file_id}",)
     
-    bot.send_message(message.chat.id, 'Audio recebido com sucesso!')
+    # make a post request to airtable to save the user data
+    table_participantes.create({
+        "nome_completo": user.fullname, 
+        "vaga": user.desired_job,
+        "idade": user.age,
+        'CEP': user.cep,
+        "email": user.email, 
+        "linkedin": user.linkedin, 
+        "curriculum": [
+            {                        
+                "url":f'https://drive.google.com/u/1/uc?id={user.curriculum_file_id}&export=download',
+            }                    
+        ],            
+        "status_participacao": user.status, 
+        })                     
+    
+    
+    bot.send_message(message.chat.id, 'Currículo recebido com sucesso!')
     time.sleep(2)
     bot.send_message(message.chat.id, 'Agora vamos para o próximo passo, vamos lá?')
-    msg = bot.send_message(message.chat.id, 'para conhecer mais sobre o seu perfil gostaríamos que voce enviasse um video curto sobre voce (max 60 segundos)')
-    bot.register_next_step_handler(msg, process_upload_video_step)
+    time.sleep(2) 
     
-    
+    msg = bot.send_message(message.chat.id, 'para conhecer mais sobre o seu perfil gostaríamos que voce enviasse um vídeo curto sobre voce (max 60 segundos)')
+    bot.register_next_step_handler(msg, process_upload_video_step)    
 
 
 @bot.message_handler(content_types=['video_note'])
@@ -326,23 +416,22 @@ def process_upload_video_step(message):
     downloaded_file = bot.download_file(file_info.file_path)
     with open(filename, 'wb') as new_file:
         new_file.write(downloaded_file)
-
     
     #upload file to google drive user folder  
-    # upload_video_in_user_folder(filename, user.folder_id, MIME_TYPE)
+    user. upload_video_in_user_folder(filename, user.folder_id, MIME_TYPE)
     
     bot.send_message(message.chat.id, 'Vídeo recebido com sucesso!')
     time.sleep(2)
     bot.send_message(message.chat.id, 'Agora vamos para o próximo passo, vamos lá?')
     msg = bot.send_message(message.chat.id, 'quais são as três coisas mais importantes para voce no seu trabalho?')
-    bot.register_next_step_handler(msg, process_comportamental_step)    
+    bot.register_next_step_handler(msg, process_three_things_step)    
      
 
 
-def process_comportamental_test_step(message):
+def process_three_things_step(message):
     try:
         chat_id = message.chat.id
-        user.comportamental_test = message.text
+        user.three_things = message.text
         bot.send_message(chat_id, 'Ok!')
         time.sleep(2)
         msg = bot.send_message(chat_id, 'Conte-nos qual foi a decisão mais difícil que você teve que tomar nos últimos seis meses?')
@@ -350,7 +439,7 @@ def process_comportamental_test_step(message):
 
     except Exception as e:
         bot.send_message(message.chat.id, 'Desculpe, não entendi o que você quis dizer. Por favor, tente novamente.')
-        bot.register_next_step_handler(message, process_comportamental_test_step)
+        bot.register_next_step_handler(message, process_three_things_step)
 
 
 def process_hard_decision_step(message):
@@ -410,7 +499,7 @@ def process_end_step(message):
         chat_id = message.chat.id
         user.save()
         bot.send_message(chat_id, 'Obrigado por participar!')
-        bot.send_message(chat_id, 'Obrigado pela sua pergunta. O resultado da sua entrevista sairá muito em breve. Voce receberá um email de notificação, fique atento na sua caixa de spam.')
+        bot.send_message(chat_id, 'O resultado da sua entrevista sairá muito em breve. Voce receberá um email de notificação, fique atento na sua caixa de spam.')
         bot.send_message(chat_id, 'Boa sorte!')
         bot.send_dice(chat_id, emoji='HAPPY_EMOJI')
         # bot.send_animation(chat_id, open('animation.gif', 'rb'))
