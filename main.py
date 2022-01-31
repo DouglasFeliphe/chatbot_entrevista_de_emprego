@@ -43,10 +43,6 @@ class User:
         self.best_partner = None
         self.future = None
         self.reason = None
-        
-        
-        
-        
         self.status = "Em andamento"
         
         
@@ -104,11 +100,11 @@ def process_fullname_step(message):
         user.fullname = message.text
         print('message.text', message.text)
         user_dict[chat_id] = user
-        msg = bot.reply_to(message, 'Informe a vaga desejada:', reply_markup=jobs_markup)
+        msg = bot.send_message(message, 'Informe a vaga desejada:', reply_markup=jobs_markup)
         bot.register_next_step_handler(msg, process_desired_job_step)
         
     except Exception as e:
-        bot.reply_to(message, "Erro ao processar seu nome")
+        bot.reply_to(message, "Erro ao processar a vaga desejada")
         
         
          
@@ -123,7 +119,7 @@ def process_desired_job_step(message):
         user.desired_job = message.text
         print('message.text', message.text)
         user_dict[chat_id] = user
-        msg = bot.reply_to(message, 'Informe sua idade:')
+        msg = bot.send_message(message, 'Informe sua idade:')
         bot.register_next_step_handler(msg, process_age_step)
         
     except Exception as e:
@@ -144,7 +140,7 @@ def process_age_step(message):
         
         user.age = int(age)
         user_dict[chat_id] = user
-        msg = bot.reply_to(message, 'Informe seu CEP:')
+        msg = bot.send_message(message, 'Informe seu CEP:')
         bot.register_next_step_handler(msg, process_cep_step)
         
     except Exception as e:
@@ -162,7 +158,7 @@ def process_cep_step(message):
             return 
         
         user.cep = int(CEP)
-        msg = bot.reply_to(message, f'Seu CEP é {CEP}?', reply_markup=yes_no_markup)         
+        msg = bot.send_message(message, f'Seu CEP é {CEP}?', reply_markup=yes_no_markup)         
         bot.register_next_step_handler(msg, process_cep_confirm_step)
         
     except Exception as e:
@@ -172,7 +168,7 @@ def process_cep_step(message):
 def process_cep_confirm_step(message):
     try:
         if(message.text == 'Sim'):
-            msg = bot.reply_to(message, 'Informe seu email:')
+            msg = bot.send_message(message, 'Informe seu email:')
             bot.register_next_step_handler(msg, process_email_step)
         elif(message.text == "Não"):
             msg = bot.reply_to(message, 'Ok')
@@ -195,7 +191,7 @@ def process_email_step(message):
             return
         
         user.email = email
-        msg = bot.reply_to(message, f'Seu email é {user.email}?', reply_markup=yes_no_markup)       
+        msg = bot.send_message(message, f'Seu email é {user.email}?', reply_markup=yes_no_markup)       
         bot.register_next_step_handler(msg, process_linkedin_step)
             
     except Exception as e:
@@ -206,7 +202,7 @@ def process_email_step(message):
 def process_linkedin_step(message):
     try:
         if(message.text == 'Sim'):
-            msg = bot.reply_to(message, 'Informe seu linkedin:')
+            msg = bot.send_message(message, 'Informe seu linkedin:')
             user.linkedin = message.text            
             bot.register_next_step_handler(msg, process_linked_confirm_step)
         elif(message.text == "Não"):
@@ -229,7 +225,7 @@ def process_linked_confirm_step(message):
             return
         
         user.linkedin = linkedin        
-        msg = bot.reply_to(message, f'Seu linkedin é {user.email}?', reply_markup=yes_no_markup)       
+        msg = bot.send_message(message, f'Seu linkedin é {user.email}?', reply_markup=yes_no_markup)       
         bot.register_next_step_handler(msg, process_get_files_step)
             
     except Exception as e:
@@ -305,23 +301,6 @@ def process_upload_curriculum_step(message):
     # user.curriculum_file_id = 
     print(f"curriculum_file_id: {user.curriculum_file_id}",)
     
-    # make a post request to airtable to save the user data
-    table_participantes.create({
-        "nome_completo": user.fullname, 
-        "vaga": user.desired_job,
-        "idade": user.age,
-        'CEP': user.cep,
-        "email": user.email, 
-        "linkedin": user.linkedin, 
-        "curriculum": [
-            {                        
-                "url":f'https://drive.google.com/u/1/uc?id={user.curriculum_file_id}&export=download',
-            }                    
-        ],            
-        "status_participacao": user.status, 
-        })                     
-    
-    
     bot.send_message(message.chat.id, 'Currículo recebido com sucesso!')
     time.sleep(2)
     bot.send_message(message.chat.id, 'Agora vamos para o próximo passo, vamos lá?')
@@ -357,51 +336,7 @@ def process_upload_curriculum_step(message):
 
 
 # Handle '/document upload'
-@bot.message_handler(content_types=['document'])
-def process_upload_curriculum_step(message): 
-    
-    bot.send_message(message.chat.id, 'Fazendo upload do arquivo, aguarde...')
-    
-    # get file data from message
-    filename = message.document.file_name    
-    file_info = bot.get_file(message.document.file_id)    
-    downloaded_file = bot.download_file(file_info.file_path)
-    
-    with open(filename, 'wb') as new_file:
-        new_file.write(downloaded_file)
 
-    # table.create({"nome_completo": user.fullname, "idade": user.age ,"email": user.email, "curriculum": [{ "filename": 'curriculum.pdf',"url": file_info.file_path }]})
-    
-    #upload file to google drive user folder   
-    doc = message.document    
-    user.curriculum_file_id = upload_file_in_user_folder(filename, user.folder_id, doc)
-    # user.curriculum_file_id = 
-    print(f"curriculum_file_id: {user.curriculum_file_id}",)
-    
-    # make a post request to airtable to save the user data
-    table_participantes.create({
-        "nome_completo": user.fullname, 
-        "vaga": user.desired_job,
-        "idade": user.age,
-        'CEP': user.cep,
-        "email": user.email, 
-        "linkedin": user.linkedin, 
-        "curriculum": [
-            {                        
-                "url":f'https://drive.google.com/u/1/uc?id={user.curriculum_file_id}&export=download',
-            }                    
-        ],            
-        "status_participacao": user.status, 
-        })                     
-    
-    
-    bot.send_message(message.chat.id, 'Currículo recebido com sucesso!')
-    time.sleep(2)
-    bot.send_message(message.chat.id, 'Agora vamos para o próximo passo, vamos lá?')
-    time.sleep(2) 
-    
-    msg = bot.send_message(message.chat.id, 'para conhecer mais sobre o seu perfil gostaríamos que voce enviasse um vídeo curto sobre voce (max 60 segundos)')
-    bot.register_next_step_handler(msg, process_upload_video_step)    
 
 
 @bot.message_handler(content_types=['video_note'])
@@ -418,7 +353,7 @@ def process_upload_video_step(message):
         new_file.write(downloaded_file)
     
     #upload file to google drive user folder  
-    user. upload_video_in_user_folder(filename, user.folder_id, MIME_TYPE)
+    user.video_presentation_file_id = upload_video_in_user_folder(filename, user.folder_id, MIME_TYPE)
     
     bot.send_message(message.chat.id, 'Vídeo recebido com sucesso!')
     time.sleep(2)
@@ -497,15 +432,41 @@ def process_reason_step(message):
 def process_end_step(message):
     try:
         chat_id = message.chat.id
-        user.save()
-        bot.send_message(chat_id, 'Obrigado por participar!')
+         # make a post request to airtable to save the user data
+        table_participantes.create({
+            "nome_completo": user.fullname, 
+            "vaga": user.desired_job,
+            "idade": user.age,
+            'CEP': user.cep,
+            "email": user.email, 
+            "linkedin": user.linkedin, 
+            "curriculum": [
+                {                        
+                    "url":f'https://drive.google.com/u/1/uc?id={user.curriculum_file_id}&export=download',
+                }                    
+            ],
+            "video_de_apresentacao": [
+                {                        
+                    "url":f'https://drive.google.com/u/1/uc?id={user.video_presentation_file_id}&export=download',
+                }                    
+            ],
+            "tres_coisas_importantes" : user.three_things,
+            "decisao_dificil" : user.hard_decision,
+            "parceiro_ou_supervisor" : user.best_partner,
+            "proximo_ano" : user.future,
+            "motivo_para_contratar" : user.reason,            
+            "status_participacao": user.status, 
+            })  
+        bot.send_message(chat_id, 'Ok, chegamos ao fim. Agradecemos a sua participação no nosos processo. Obrigado!')
+        time.sleep(2)        
         bot.send_message(chat_id, 'O resultado da sua entrevista sairá muito em breve. Voce receberá um email de notificação, fique atento na sua caixa de spam.')
-        bot.send_message(chat_id, 'Boa sorte!')
-        bot.send_dice(chat_id, emoji='HAPPY_EMOJI')
+        time.sleep(2)
+        bot.send_message(chat_id, 'Boa sorte e até mais!')
+        # bot.send_dice(chat_id, emoji='HAPPY_EMOJI')
         # bot.send_animation(chat_id, open('animation.gif', 'rb'))
-        time.sleep(2)
-        bot.send_message(chat_id, 'Você pode acessar seu perfil no menu acima.')
-        time.sleep(2)
+        # time.sleep(2)
+        # bot.send_message(chat_id, 'Você pode acessar seu perfil no menu acima.')
+        # time.sleep(2)
 
     except Exception as e:
         bot.send_message(message.chat.id, 'Desculpe, não entendi o que você quis dizer. Por favor, tente novamente.')
